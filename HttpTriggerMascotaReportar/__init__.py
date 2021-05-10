@@ -52,8 +52,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     dict_respuesta = {}
     try:
         #Aca se agrega la descripcion del input
-        caracteristicas = req.params.get('inputdesc')
-
+        caracteristicas = req.form.get('inputdesc')
+        
         data = req.files['img']
         logging.info(data)
         
@@ -77,6 +77,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         ## Respuesta:
         # dict_respuesta['file_name']
         # dict_respuesta['label']
+        # dict_respuesta['full_file_name']
 
         if not flag:
             dict_respuesta['mensaje'] = "Hubo un error. Volver a ingresar la imagen."
@@ -89,10 +90,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         #
         # Guardar imagen en Azure Storage
         #
-        blob_name = f"images/{nombre_imagen}"
-        logging.info(blob_name)
+        # Nombre con el que se guardará en Azure Storage
+        full_file_name = dict_respuesta['full_file_name']
+        logging.info(full_file_name)
         logging.info(file_path)
-        block_blob_service.create_blob_from_path(CONTAINER_NAME, blob_name, file_path)
+        block_blob_service.create_blob_from_path(CONTAINER_NAME, full_file_name, file_path)
 
         #
         # Guardar en base de datos
@@ -104,7 +106,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         with open(file_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
 
-        flag, respuesta = mongodb.registrar_mascota_reportada(encoded_string=encoded_string, image_path=file_name, label, caracteristicas, distancia)
+        flag, respuesta = mongodb.registrar_mascota_reportada(encoded_string=encoded_string, full_file_name=full_file_name, image_path=file_name, label=label, caracteristicas=caracteristicas, distancia=distancia)
         if not flag:
             dict_respuesta['mensaje'] = "Hubo un error. Volver a ingresar la imagen."
             return func.HttpResponse(
