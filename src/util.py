@@ -8,6 +8,6 @@ DB_URI = os.environ.get('MONGODB_URL')
 DB_NAME = os.environ.get('DB_NAME')
 DB_COLECCION = os.environ.get('DB_COLECCION')
 
-ACCOUNT_NAME = 'mascotas'
-ACCOUNT_KEY = '5ZQbfjqEz5xuHzP4XgKTiWMMyow6OdNlN7GNcx+k90PJLdgNZvaEYLEyLZqEvol8MLR6yXeo46SzM6fbwG4wyg=='
-CONTAINER_NAME = '$web'
+ACCOUNT_NAME = os.environ.get('ACCOUNT_NAME')
+ACCOUNT_KEY = os.environ.get('ACCOUNT_KEY')
+CONTAINER_NAME = os.environ.get('CONTAINER_NAME')
