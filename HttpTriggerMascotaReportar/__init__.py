@@ -74,7 +74,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # Registrar en memoria la imagen reportada
         #
         flag, dict_respuesta = reportar_mascota_desaparecida(file_path)
-        ## Respuesta:
+        ## Respuesta variable dict_respuesta:
         # dict_respuesta['file_name']
         # dict_respuesta['label']
         # dict_respuesta['full_file_name']
