@@ -84,11 +84,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=500
             )
         
-        for key,value in respuesta.items():
-            dict_respuesta[key] = {'rutas':value['image'],
-                                    'caracteristicas':value['caracteristicas'],
-                                    'distancia':value['distancia']}
+        if 'parecidos' in respuesta:
+            for key,value in respuesta['parecidos'].items():
+                dict_respuesta[key] = {'rutas':value['image'],
+                                        'caracteristicas':value['caracteristicas'],
+                                        'distancia':value['distancia']}
         
+        dict_respuesta['codigo'] = respuesta['codigo']
+        dict_respuesta['mensaje'] = respuesta['mensaje']
     except ValueError as e:
         logging.info('Ocurrió un error')
         logging.info(e)
