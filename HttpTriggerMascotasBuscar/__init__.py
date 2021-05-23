@@ -38,7 +38,7 @@ def obtener_imagen_recortada(data_imagen):
         logging.info('Error al identificar y recortar imagen: {}'.format(e))
         return False, None
 
-def obtener_mascotas_parecidas(image_bytes):
+def obtener_mascotas_parecidas(image_bytes, geolocalizacion):
     '''
     Invocar API de detección de perros parecidos a partir de la foto del rostro
     Request: Imagen en base 64 del rostro del perro
@@ -48,7 +48,7 @@ def obtener_mascotas_parecidas(image_bytes):
     try:
         if ENDPOINT_TENSORFLOW_MODEL:
             files = {'upload_file': image_bytes}
-            response = requests.post(ENDPOINT_TENSORFLOW_MODEL, files=files)
+            response = requests.post(ENDPOINT_TENSORFLOW_MODEL, json=files)
 
             logging.info('Respuesta: {}'.format(response.text))
             predictions = json.loads(response.text)
@@ -64,10 +64,17 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     dict_respuesta = {}
     try:
-        data = req.files['img']
+        data = req.json
         logging.info(data)
+        if data is None:
+            return {'mensaje':'Debe ingresar una imagen.', 'codigo': 400}
+        if not 'imagen' in data:
+            return {'mensaje':'Debe ingresar una imagen.', 'codigo': 400}
+        
+        bytes_imagen = data['imagen']
+        geolocalizacion = data['geolocalizacion']
 
-        flag, img_recortada = obtener_imagen_recortada(data)
+        flag, img_recortada = obtener_imagen_recortada(bytes_imagen)
         
         if flag == False:
             return func.HttpResponse(
@@ -77,7 +84,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
         dict_respuesta["imagen_recortada"] = base64.b64encode(img_recortada).decode("utf-8")
 
-        flag, respuesta = obtener_mascotas_parecidas(img_recortada)
+        flag, respuesta = obtener_mascotas_parecidas(dict_respuesta["imagen_recortada"], geolocalizacion)
         if flag == False:
             return func.HttpResponse(
                 "Hubo un error al mostrar mascotas. Volver a ingresar la imagen.",
@@ -88,7 +95,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             for key,value in respuesta['parecidos'].items():
                 dict_respuesta[key] = {'rutas':value['image'],
                                         'caracteristicas':value['caracteristicas'],
-                                        'distancia':value['distancia']}
+                                        'ubicacion':value['ubicacion'],
+                                        'label':value['label'],
+                                        'distancia':value['distancia']
+                                        }
         
         dict_respuesta['codigo'] = respuesta['codigo']
         dict_respuesta['mensaje'] = respuesta['mensaje']
@@ -97,7 +107,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(e)
         return func.HttpResponse(
             "Hubo un error. Volver a ingresar la imagen.",
-            status_code=500
+            status_code=503
         )
     
     if data:
