@@ -1,10 +1,8 @@
 import logging
 
-import os
 import json
 import base64
 import requests
-import random
 from datetime import datetime
 
 import tempfile
@@ -48,7 +46,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     dict_respuesta = {}
     try:
-        data = req.json
+        data = req.get_json()
         logging.info(data)
         if data is None:
             return {'mensaje':'Debe ingresar una imagen.', 'codigo': 400}
@@ -70,12 +68,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.info(file_path)
 
         with open(file_path, 'wb') as f:
-            f.write(data.read())
+            f.write(base64.b64decode(bytes_imagen))
         
         #
         # Registrar en memoria la imagen reportada
         #
-        flag, dict_respuesta = reportar_mascota_desaparecida(file_path)
+        flag, dict_respuesta = reportar_mascota_desaparecida(bytes_imagen)
         ## Respuesta variable dict_respuesta:
         # dict_respuesta['file_name']
         # dict_respuesta['label']

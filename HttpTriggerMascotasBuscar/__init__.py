@@ -22,7 +22,7 @@ def obtener_imagen_recortada(data_imagen):
     try:
         if ENDPOINT_DOG_FACE_CROPPER:
             files = {'upload_file': data_imagen}
-            response = requests.post(ENDPOINT_DOG_FACE_CROPPER, files=files)
+            response = requests.post(ENDPOINT_DOG_FACE_CROPPER, json=files)
 
             logging.info('Respuesta: {}'.format(type(json.loads(response.text)['img'])))
             
@@ -64,7 +64,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     dict_respuesta = {}
     try:
-        data = req.json
+        data = req.get_json()
         logging.info(data)
         if data is None:
             return {'mensaje':'Debe ingresar una imagen.', 'codigo': 400}
@@ -77,8 +77,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         flag, img_recortada = obtener_imagen_recortada(bytes_imagen)
         
         if flag == False:
+            dict_respuesta['codigo'] = 400
+            dict_respuesta['mensaje'] = "Hubo un error. Volver a ingresar la imagen."
             return func.HttpResponse(
-                "Hubo un error. Volver a ingresar la imagen.",
+                json.dumps(dict_respuesta),
                 status_code=400
             )
         
@@ -86,8 +88,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         flag, respuesta = obtener_mascotas_parecidas(dict_respuesta["imagen_recortada"], geolocalizacion)
         if flag == False:
+            dict_respuesta['codigo'] = 500
+            dict_respuesta['mensaje'] = "Hubo un error al mostrar mascotas. Volver a ingresar la imagen."
             return func.HttpResponse(
-                "Hubo un error al mostrar mascotas. Volver a ingresar la imagen.",
+                json.dumps(dict_respuesta),
                 status_code=500
             )
         
@@ -105,8 +109,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except ValueError as e:
         logging.info('Ocurrió un error')
         logging.info(e)
+        dict_respuesta['codigo'] = 503
+        dict_respuesta['mensaje'] = "Hubo un error. Volver a ingresar la imagen."
         return func.HttpResponse(
-            "Hubo un error. Volver a ingresar la imagen.",
+            json.dumps(dict_respuesta),
             status_code=503
         )
     
