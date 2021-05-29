@@ -21,7 +21,7 @@ def obtener_imagen_recortada(data_imagen):
     print('obtener_imagen_recortada')
     try:
         if ENDPOINT_DOG_FACE_CROPPER:
-            files = {'upload_file': data_imagen}
+            files = {'imagen_bytes': data_imagen}
             response = requests.post(ENDPOINT_DOG_FACE_CROPPER, json=files)
 
             logging.info('Respuesta: {}'.format(type(json.loads(response.text)['img'])))
@@ -47,7 +47,7 @@ def obtener_mascotas_parecidas(image_bytes, geolocalizacion):
     print('obtener_mascotas_parecidas')
     try:
         if ENDPOINT_TENSORFLOW_MODEL:
-            files = {'upload_file': image_bytes}
+            files = {'imagen_bytes': image_bytes, 'geolocalizacion': geolocalizacion}
             response = requests.post(ENDPOINT_TENSORFLOW_MODEL, json=files)
 
             logging.info('Respuesta: {}'.format(response.text))
@@ -101,7 +101,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                                         'caracteristicas':value['caracteristicas'],
                                         'ubicacion':value['ubicacion'],
                                         'label':value['label'],
-                                        'distancia':value['distancia']
+                                        'distancia':value['distancia'],
+                                        'fecha_perdida':value['fecha_perdida'],
+                                        'timestamp_perdida':value['timestamp_perdida']
                                         }
         
         dict_respuesta['codigo'] = respuesta['codigo']
