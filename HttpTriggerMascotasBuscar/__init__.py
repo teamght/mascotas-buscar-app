@@ -9,34 +9,8 @@ from datetime import datetime
 
 import azure.functions as func
 
-from ..src.util import ENDPOINT_DOG_FACE_CROPPER, ENDPOINT_TENSORFLOW_MODEL
+from ..src.util import ENDPOINT_TENSORFLOW_MODEL
 
-
-def obtener_imagen_recortada(data_imagen):
-    '''
-    Invocar API de detección y recorte de rostro de perro
-    Request: Imagen en base 64 del perro
-    Response: Imagen en base 64 del rostro del perro
-    '''
-    print('obtener_imagen_recortada')
-    try:
-        if ENDPOINT_DOG_FACE_CROPPER:
-            files = {'imagen_bytes': data_imagen}
-            response = requests.post(ENDPOINT_DOG_FACE_CROPPER, json=files)
-
-            logging.info('Respuesta: {}'.format(type(json.loads(response.text)['img'])))
-            
-            imagen_bytes = base64.b64decode(json.loads(response.text)['img'])
-            logging.info('API de recorte e identificación de rostro de perro retornó: {}'.format(type(imagen_bytes)))
-
-            if type(imagen_bytes) == bytes:
-                return True, imagen_bytes
-            else:
-                return False, None
-        return False, 'No se ha inicializado variable de entorno ENDPOINT_DOG_FACE_CROPPER'
-    except Exception as e:
-        logging.info('Error al identificar y recortar imagen: {}'.format(e))
-        return False, None
 
 def obtener_mascotas_parecidas(image_bytes, geolocalizacion):
     '''
@@ -74,30 +48,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         bytes_imagen = data['imagen']
         geolocalizacion = data['geolocalizacion']
 
-        flag, img_recortada = obtener_imagen_recortada(bytes_imagen)
-        
-        if flag == False:
-            dict_respuesta['codigo'] = 400
-            dict_respuesta['mensaje'] = "Hubo un error. Volver a ingresar la imagen."
-            return func.HttpResponse(
-                json.dumps(dict_respuesta),
-                status_code=400
-            )
-        
-        dict_respuesta["imagen_recortada"] = base64.b64encode(img_recortada).decode("utf-8")
-
-        flag, respuesta = obtener_mascotas_parecidas(dict_respuesta["imagen_recortada"], geolocalizacion)
-        if flag == False:
-            dict_respuesta['codigo'] = 500
-            dict_respuesta['mensaje'] = "Hubo un error al mostrar mascotas. Volver a ingresar la imagen."
-            return func.HttpResponse(
-                json.dumps(dict_respuesta),
-                status_code=500
-            )
+        flag, respuesta = obtener_mascotas_parecidas(bytes_imagen, geolocalizacion)
         
         if 'parecidos' in respuesta:
-            for key,value in respuesta['parecidos'].items():
-                dict_respuesta[key] = {'rutas':value['image'],
+            for key,value in respuesta['resultados'].items():
+                dict_respuesta[key] = {'image':value['image'],
                                         'caracteristicas':value['caracteristicas'],
                                         'ubicacion':value['ubicacion'],
                                         'label':value['label'],
@@ -105,6 +60,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                                         'fecha_perdida':value['fecha_perdida'],
                                         'timestamp_perdida':value['timestamp_perdida']
                                         }
+        
+        if 'imagen_recortada' in respuesta:
+            dict_respuesta["imagen_recortada"] = respuesta["imagen_recortada"]
         
         dict_respuesta['codigo'] = respuesta['codigo']
         dict_respuesta['mensaje'] = respuesta['mensaje']

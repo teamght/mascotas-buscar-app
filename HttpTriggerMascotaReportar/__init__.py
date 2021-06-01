@@ -1,7 +1,6 @@
 import logging
 
 import json
-import base64
 import requests
 from datetime import datetime
 
